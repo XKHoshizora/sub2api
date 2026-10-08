@@ -30,7 +30,7 @@ RUN corepack enable && corepack prepare pnpm@9 --activate
 
 # Install dependencies first (better caching)
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
-RUN --mount=type=cache,id=sub2api-pnpm-store,target=/root/.local/share/pnpm/store \
+RUN --mount=type=cache,id=s/837a22ae-6c1a-4051-a29c-f40d33555799-/root/.local/share/pnpm/store,target=/root/.local/share/pnpm/store \
     if [ -n "${NPM_CONFIG_REGISTRY}" ]; then pnpm config set registry "${NPM_CONFIG_REGISTRY}"; fi && \
     pnpm install --frozen-lockfile --prefer-offline
 
@@ -54,7 +54,7 @@ FROM --platform=${BUILDPLATFORM} ${GOLANG_IMAGE} AS backend-builder
 
 # Build arguments for version info (set by CI)
 ARG VERSION=
-ARG COMMIT=docker
+ARG COMMIT=0363b8c-canalfix20261008
 ARG DATE
 ARG GOPROXY
 ARG GOSUMDB
@@ -74,7 +74,7 @@ WORKDIR /app/backend
 COPY backend/go.mod backend/go.sum ./
 # Cache mount keeps the module cache across builds so a transient CDN blip on
 # retry resumes instead of re-fetching every zip from scratch.
-RUN --mount=type=cache,id=sub2api-gomod,target=/go/pkg/mod \
+RUN --mount=type=cache,id=s/837a22ae-6c1a-4051-a29c-f40d33555799-/go/pkg/mod,target=/go/pkg/mod \
     go mod download
 
 # Copy backend source first
@@ -83,16 +83,16 @@ COPY backend/ ./
 # Copy frontend dist from previous stage (must be after backend copy to avoid being overwritten)
 COPY --from=frontend-builder /app/backend/internal/web/dist ./internal/web/dist
 
-# Build the binary (BuildType=release for CI builds, embed frontend)
+# Build the immutable Railway binary with embedded frontend; updates use the maintained source.
 # Version precedence: build arg VERSION > exact git tag > cmd/server/VERSION
-RUN --mount=type=cache,id=sub2api-gomod,target=/go/pkg/mod \
-    --mount=type=cache,id=sub2api-gobuild,target=/root/.cache/go-build \
+RUN --mount=type=cache,id=s/837a22ae-6c1a-4051-a29c-f40d33555799-/go/pkg/mod,target=/go/pkg/mod \
+    --mount=type=cache,id=s/837a22ae-6c1a-4051-a29c-f40d33555799-/root/.cache/go-build,target=/root/.cache/go-build \
     VERSION_VALUE="${VERSION}" && \
     if [ -z "${VERSION_VALUE}" ]; then VERSION_VALUE="$(./scripts/resolve-version.sh)"; fi && \
     DATE_VALUE="${DATE:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}" && \
     CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build \
     -tags embed \
-    -ldflags="-s -w -X main.Version=${VERSION_VALUE} -X main.Commit=${COMMIT} -X main.Date=${DATE_VALUE} -X main.BuildType=release" \
+    -ldflags="-s -w -X main.Version=${VERSION_VALUE} -X main.Commit=${COMMIT} -X main.Date=${DATE_VALUE} -X main.BuildType=managed" \
     -trimpath \
     -o /app/sub2api \
     ./cmd/server
@@ -110,7 +110,7 @@ FROM ${ALPINE_IMAGE}
 # Labels
 LABEL maintainer="Wei-Shaw <github.com/Wei-Shaw>"
 LABEL description="Sub2API - AI API Gateway Platform"
-LABEL org.opencontainers.image.source="https://github.com/Wei-Shaw/sub2api"
+LABEL org.opencontainers.image.source="https://github.com/XKHoshizora/sub2api"
 
 # Install runtime dependencies
 RUN apk add --no-cache \
