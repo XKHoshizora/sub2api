@@ -1,7 +1,11 @@
 # Maintained Railway deployment
 
-This branch is based on upstream v0.2.14 (0363b8cdba8cec3e2ba4b2dbd49c4481143fa55d).
+This branch includes upstream v0.2.15 and main at 3a6fd1c9db07203ca308aaba69e502bc1f35b307.
 It preserves the reviewed GPT HTTP cancellation, checked response delivery, and confirmed-usage accounting fixes from the previous 0.2.13 deployment.
+
+The existing `242_add_usage_log_response_outcome.sql` remains byte-for-byte unchanged. Upstream adds `242_drop_platform_check_constraints.sql`; migrations are tracked by full filename, so the shared numeric prefix does not collide. This only drops obsolete platform whitelist constraints and does not change rows. Binary rollback retains both completed migrations; accounts created for new platforms need separate compatibility review before rollback.
+
+The HTTP lifecycle regression now verifies the maintained cancellation/observed-consumption behavior, using the existing fork regression from `c8a2573dba4f293eab8f03a02474c185492023af`. The Ollama stale-probe fixture uses a reset two seconds earlier than the original reset, so low-resolution clocks cannot accidentally make the old and new generations equal. No production Ollama code changes are included.
 
 The runtime is an immutable, non-root Railway container. `/app/data` stays on the existing volume. Website version checks remain available; in-place update and official-binary rollback are blocked with `DEPLOYMENT_MANAGED_UPDATE` (HTTP 409) so custom fixes cannot be silently overwritten.
 
