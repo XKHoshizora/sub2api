@@ -415,6 +415,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 		zap.Int64("api_key_id", apiKey.ID),
 		zap.Any("group_id", apiKey.GroupID),
 	)
+	reqLog = withOpenAICanalAPIAttemptID(c, reqLog)
 	if !h.ensureResponsesDependencies(c, reqLog) {
 		return
 	}
@@ -809,6 +810,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 			responseLatencyMs = forwardDurationMs - upstreamLatencyMs
 		}
 		service.SetOpsLatencyMs(c, service.OpsResponseLatencyMsKey, responseLatencyMs)
+		logOpenAIAttemptTiming(c, reqLog, account, result, forwardDurationMs, err)
 		if err == nil && result != nil && result.FirstTokenMs != nil {
 			service.SetOpsLatencyMs(c, service.OpsTimeToFirstTokenMsKey, int64(*result.FirstTokenMs))
 		}
@@ -859,6 +861,14 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 			})
 		}
 		if err != nil {
+			if handleOpenAIDeliveryFailure(c, reqLog, account, result, err, submitResponsesUsage) {
+				return
+			}
+			if h.handleOpenAIUpstreamFailedWithUsage(c, reqLog, account, result, err, streamStarted, func(reportErr error) {
+				h.gatewayService.ReportOpenAIAccountScheduleResult(account, openAIAccountScheduleModel(c, account, forwardModel, requireCompact, nil), false, nil, reportErr)
+			}, submitResponsesUsage) {
+				return
+			}
 			if result != nil && result.ClientDisconnect {
 				reqLog.Info("openai.client_disconnected",
 					zap.Int64("account_id", account.ID),
