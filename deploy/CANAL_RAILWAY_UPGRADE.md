@@ -1,9 +1,11 @@
 # Maintained Railway deployment
 
-This branch includes upstream v0.2.15 and main at 3a6fd1c9db07203ca308aaba69e502bc1f35b307.
+This branch includes upstream v0.2.16 and main at 4d9ac3e482106d2da3a39fe3e546d8d6801f1cc1.
 It preserves the reviewed GPT HTTP cancellation, checked response delivery, and confirmed-usage accounting fixes from the previous 0.2.13 deployment.
 
-The existing `242_add_usage_log_response_outcome.sql` remains byte-for-byte unchanged. Upstream adds `242_drop_platform_check_constraints.sql`; migrations are tracked by full filename, so the shared numeric prefix does not collide. This only drops obsolete platform whitelist constraints and does not change rows. Binary rollback retains both completed migrations; accounts created for new platforms need separate compatibility review before rollback.
+The existing `242_add_usage_log_response_outcome.sql` remains byte-for-byte unchanged. Upstream adds `242_group_i18n.sql` and `243`–`245` Gemini cached-content migrations: additive columns, a new table and indexes. Migrations are tracked by full filename, so the shared `242` prefix does not collide. Binary rollback retains completed migrations. Gemini cached contents created after this upgrade may keep incurring upstream storage charges until expiry; review and settle those resources before rolling back to a binary without cache management.
+
+The ops error logger merge keeps both the existing delivery/consumption audit message and upstream Google-format local-error classification. Upstream Responses-to-Chat fallback and long-context pricing changes preserve the maintained cancellation and observed-usage gates.
 
 The HTTP lifecycle regression now verifies the maintained cancellation/observed-consumption behavior, using the existing fork regression from `c8a2573dba4f293eab8f03a02474c185492023af`. The Ollama stale-probe fixture uses a reset two seconds earlier than the original reset, so low-resolution clocks cannot accidentally make the old and new generations equal. No production Ollama code changes are included.
 
