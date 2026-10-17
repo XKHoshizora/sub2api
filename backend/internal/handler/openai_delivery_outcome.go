@@ -26,7 +26,7 @@ func openAICanalAPIAttemptID(c *gin.Context) string {
 		return ""
 	}
 	for _, r := range value {
-		if r > unicode.MaxASCII || !(unicode.IsLetter(r) || unicode.IsDigit(r) || strings.ContainsRune("-_.:", r)) {
+		if r > unicode.MaxASCII || !unicode.IsLetter(r) && !unicode.IsDigit(r) && !strings.ContainsRune("-_.:", r) {
 			return ""
 		}
 	}

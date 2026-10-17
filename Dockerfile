@@ -54,7 +54,7 @@ FROM --platform=${BUILDPLATFORM} ${GOLANG_IMAGE} AS backend-builder
 
 # Build arguments for version info (set by CI)
 ARG VERSION=
-ARG COMMIT=4d9ac3e-canalfix20261013
+ARG COMMIT=b0a02a3-canalfix20261017
 ARG DATE
 ARG GOPROXY
 ARG GOSUMDB
