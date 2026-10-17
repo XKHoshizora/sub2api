@@ -77,10 +77,10 @@ func TestUsageStatsSuccessCountersFilterButKeepConsumption(t *testing.T) {
 	repo := &usageLogRepository{sql: db}
 	start := time.Date(2026, 10, 3, 0, 0, 0, 0, time.UTC)
 	// Only a failed-consumption row exists: 0 successful requests, all tokens/cost kept.
-	mock.ExpectQuery(regexp.QuoteMeta(`COUNT(*) FILTER (WHERE (response_outcome IS NULL OR response_outcome = 'response_written')) as total_requests,`) +
-		`\s+` + regexp.QuoteMeta(`COALESCE(SUM(input_tokens), 0) as total_input_tokens,`) +
-		`(?s).*` + regexp.QuoteMeta(`COALESCE(SUM(actual_cost), 0) as total_actual_cost,`) +
-		`\s+` + regexp.QuoteMeta(`COALESCE(AVG(COALESCE(duration_ms, 0)) FILTER (WHERE (response_outcome IS NULL OR response_outcome = 'response_written')), 0) as avg_duration_ms`)).
+	mock.ExpectQuery(regexp.QuoteMeta(`COUNT(*) FILTER (WHERE (response_outcome IS NULL OR response_outcome = 'response_written')) as total_requests,`)+
+		`\s+`+regexp.QuoteMeta(`COALESCE(SUM(input_tokens), 0) as total_input_tokens,`)+
+		`(?s).*`+regexp.QuoteMeta(`COALESCE(SUM(actual_cost), 0) as total_actual_cost,`)+
+		`\s+`+regexp.QuoteMeta(`COALESCE(AVG(COALESCE(duration_ms, 0)) FILTER (WHERE (response_outcome IS NULL OR response_outcome = 'response_written')), 0) as avg_duration_ms`)).
 		WithArgs(int64(9), start, start.Add(time.Hour)).
 		WillReturnRows(sqlmock.NewRows([]string{"total_requests", "total_input_tokens", "total_output_tokens", "total_cache_tokens",
 			"total_cache_creation_tokens", "total_cache_read_tokens", "total_cost", "total_actual_cost", "avg_duration_ms"}).

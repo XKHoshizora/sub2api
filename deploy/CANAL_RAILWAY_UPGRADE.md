@@ -1,15 +1,13 @@
 # Maintained Railway deployment
 
-This branch includes upstream v0.2.16 and main at 4d9ac3e482106d2da3a39fe3e546d8d6801f1cc1.
-It preserves the reviewed GPT HTTP cancellation, checked response delivery, and confirmed-usage accounting fixes from the previous 0.2.13 deployment.
+This branch integrates upstream v0.2.17 and main at b0a02a3304a0a78cdd003ddda1dd23ba02c03084.
+It preserves GPT HTTP cancellation, checked response delivery and flush errors, response outcome auditing, and exactly-once accounting of observed supplier consumption. Managed container update protection, the non-root runtime and the existing clock-resolution test fixtures remain intact.
 
-The existing `242_add_usage_log_response_outcome.sql` remains byte-for-byte unchanged. Upstream adds `242_group_i18n.sql` and `243`–`245` Gemini cached-content migrations: additive columns, a new table and indexes. Migrations are tracked by full filename, so the shared `242` prefix does not collide. Binary rollback retains completed migrations. Gemini cached contents created after this upgrade may keep incurring upstream storage charges until expiry; review and settle those resources before rolling back to a binary without cache management.
+Upstream adds Responses created_at normalization, subscription-model retirement checks after public alias projection, payment/refund correctness fixes, workspace-isolated Codex imports, and Gemini/Antigravity compatibility improvements. There are no new SQL migrations since the maintained v0.2.16 release. The existing 242_add_usage_log_response_outcome.sql is byte-for-byte unchanged; migrations 242 through 245 already present in production are retained on binary rollback.
 
-The ops error logger merge keeps both the existing delivery/consumption audit message and upstream Google-format local-error classification. Upstream Responses-to-Chat fallback and long-context pricing changes preserve the maintained cancellation and observed-usage gates.
+The streaming conflict keeps upstream createdAtTracker.Value() and the maintained markClientGone(err). Its regression verifies that a failed synthesized response.failed write closes the supplier body, preserves observed input usage, reports delivery failure and does not trigger account failover. The maintained request cancellation and accounting paths match the refreshed upstream PR implementation.
 
-The HTTP lifecycle regression now verifies the maintained cancellation/observed-consumption behavior, using the existing fork regression from `c8a2573dba4f293eab8f03a02474c185492023af`. The Ollama stale-probe fixture uses a reset two seconds earlier than the original reset, so low-resolution clocks cannot accidentally make the old and new generations equal. No production Ollama code changes are included.
-
-The runtime is an immutable, non-root Railway container. `/app/data` stays on the existing volume. Website version checks remain available; in-place update and official-binary rollback are blocked with `DEPLOYMENT_MANAGED_UPDATE` (HTTP 409) so custom fixes cannot be silently overwritten.
+The runtime is an immutable, non-root Railway container. /app/data stays on the existing volume. Website version checks remain available; in-place updates and official-binary rollback stay blocked with DEPLOYMENT_MANAGED_UPDATE so custom fixes cannot be overwritten.
 
 ## Upgrade procedure
 

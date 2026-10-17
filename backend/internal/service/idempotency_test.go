@@ -395,7 +395,9 @@ func TestIdempotencyCoordinator_ConcurrentSameKeySingleSideEffect(t *testing.T) 
 
 	metrics := GetIdempotencyMetricsSnapshot()
 	require.Equal(t, uint64(1), metrics.ClaimTotal)
-	require.Equal(t, uint64(1), metrics.ReplayTotal)
+	// Other goroutines can arrive after completion and legitimately replay too.
+	// The explicit request above guarantees at least one replay.
+	require.GreaterOrEqual(t, metrics.ReplayTotal, uint64(1))
 	require.GreaterOrEqual(t, metrics.ConflictTotal, uint64(1))
 }
 
