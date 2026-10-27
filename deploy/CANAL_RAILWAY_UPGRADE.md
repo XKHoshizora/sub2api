@@ -1,13 +1,12 @@
 # Maintained Railway deployment
 
-This branch integrates upstream v0.2.17 and main at b0a02a3304a0a78cdd003ddda1dd23ba02c03084.
-It preserves GPT HTTP cancellation, checked response delivery and flush errors, response outcome auditing, and exactly-once accounting of observed supplier consumption. Managed container update protection, the non-root runtime and the existing clock-resolution test fixtures remain intact.
+This branch integrates upstream main at 15701ba187af5827d740901d53421bd69ed97717 (VERSION 0.2.18). It retains GPT HTTP cancellation, checked writes and flush errors, response outcomes, observed-consumption accounting, timing/correlation, and managed non-root container update protection.
 
-Upstream adds Responses created_at normalization, subscription-model retirement checks after public alias projection, payment/refund correctness fixes, workspace-isolated Codex imports, and Gemini/Antigravity compatibility improvements. There are no new SQL migrations since the maintained v0.2.16 release. The existing 242_add_usage_log_response_outcome.sql is byte-for-byte unchanged; migrations 242 through 245 already present in production are retained on binary rollback.
+The buffered compatibility reader combines the new bounded Grok prior-model audit with the existing GPT downstream cancellation context and observed-usage handling. OpenAIForwardResult retains both ResponseOutcome and upstream ImageEndpoint, preserving the distinction between delivery failures and endpoint-specific image billing. Upstream queued/metadata-event retry classification is preserved. The existing response-outcome SQL migration is byte-for-byte unchanged.
 
-The streaming conflict keeps upstream createdAtTracker.Value() and the maintained markClientGone(err). Its regression verifies that a failed synthesized response.failed write closes the supplier body, preserves observed input usage, reports delivery failure and does not trigger account failover. The maintained request cancellation and accounting paths match the refreshed upstream PR implementation.
+Upstream migrations 246 through 248 adjust the formerly ignored Gemini/Antigravity image flag for compatibility, add the scoped administrator-key table, and add image_count_billing with a false default. No account/key data is deleted. Completed additive migrations remain on binary rollback; do not run downgrade SQL. Before reverting after adopting scoped administrator keys or image-count billing, review those new features because older binaries cannot honor their new contracts. Existing JWT administrator access remains the rollback access path.
 
-The runtime is an immutable, non-root Railway container. /app/data stays on the existing volume. Website version checks remain available; in-place updates and official-binary rollback stay blocked with DEPLOYMENT_MANAGED_UPDATE so custom fixes cannot be overwritten.
+The runtime is an immutable non-root container. The existing /app/data mount remains in use. Version checks stay available; direct binary updates and official-binary rollback remain blocked with DEPLOYMENT_MANAGED_UPDATE so they cannot overwrite maintained fixes.
 
 ## Upgrade procedure
 
