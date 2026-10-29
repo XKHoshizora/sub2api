@@ -1,10 +1,10 @@
 # Maintained Railway deployment
 
-This branch integrates upstream main at 15701ba187af5827d740901d53421bd69ed97717 (VERSION 0.2.18). It retains GPT HTTP cancellation, checked writes and flush errors, response outcomes, observed-consumption accounting, timing/correlation, and managed non-root container update protection.
+This branch integrates upstream main at a3298b46ebe239fb0720b068a1eb3383955bdac2 (VERSION 0.2.19). It retains GPT HTTP cancellation, checked writes and flush errors, response outcomes, observed-consumption accounting, timing/correlation, and managed non-root container update protection.
 
-The buffered compatibility reader combines the new bounded Grok prior-model audit with the existing GPT downstream cancellation context and observed-usage handling. OpenAIForwardResult retains both ResponseOutcome and upstream ImageEndpoint, preserving the distinction between delivery failures and endpoint-specific image billing. Upstream queued/metadata-event retry classification is preserved. The existing response-outcome SQL migration is byte-for-byte unchanged.
+The non-streaming Responses paths combine upstream SSE-to-JSON fixes, including missing Content-Type and incomplete/cancelled terminal events, with checked downstream writes and consumption-preserving delivery errors. Aggregated JSON explicitly replaces the upstream SSE Content-Type. The existing bounded Grok model audit, cancellation contexts, image-endpoint billing boundaries, and queued/metadata retry behavior remain in place.
 
-Upstream migrations 246 through 248 adjust the formerly ignored Gemini/Antigravity image flag for compatibility, add the scoped administrator-key table, and add image_count_billing with a false default. No account/key data is deleted. Completed additive migrations remain on binary rollback; do not run downgrade SQL. Before reverting after adopting scoped administrator keys or image-count billing, review those new features because older binaries cannot honor their new contracts. Existing JWT administrator access remains the rollback access path.
+There are no new SQL migrations since the maintained 0.2.18 deployment. All existing migration files, including the response-outcome migration, are unchanged. Keep the database and data volumes on binary rollback; do not run downgrade SQL or restore snapshots automatically. Scoped administrator keys and image-count billing were introduced in 0.2.18 and remain available.
 
 The runtime is an immutable non-root container. The existing /app/data mount remains in use. Version checks stay available; direct binary updates and official-binary rollback remain blocked with DEPLOYMENT_MANAGED_UPDATE so they cannot overwrite maintained fixes.
 
