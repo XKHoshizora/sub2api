@@ -1,10 +1,10 @@
 # Maintained Railway deployment
 
-This branch integrates upstream main at a3298b46ebe239fb0720b068a1eb3383955bdac2 (VERSION 0.2.19). It retains GPT HTTP cancellation, checked writes and flush errors, response outcomes, observed-consumption accounting, timing/correlation, and managed non-root container update protection.
+This branch integrates upstream main at 6b4b37db43443b5e88e424fe3c69602cc3810dfb (VERSION 0.2.20). It retains GPT HTTP cancellation, checked writes and flush errors, response outcomes, observed-consumption accounting, timing/correlation, and managed non-root container update protection.
 
-The non-streaming Responses paths combine upstream SSE-to-JSON fixes, including missing Content-Type and incomplete/cancelled terminal events, with checked downstream writes and consumption-preserving delivery errors. Aggregated JSON explicitly replaces the upstream SSE Content-Type. The existing bounded Grok model audit, cancellation contexts, image-endpoint billing boundaries, and queued/metadata retry behavior remain in place.
+The passthrough merge keeps linked downstream cancellation and usage-preserving partial results while applying upstream instructions echo handling and empty-instructions support. Upstream resource budgets, buffered reasoning fixes, image routing and MCP support remain in place alongside checked delivery, bounded Grok model audits and endpoint-specific image billing.
 
-There are no new SQL migrations since the maintained 0.2.18 deployment. All existing migration files, including the response-outcome migration, are unchanged. Keep the database and data volumes on binary rollback; do not run downgrade SQL or restore snapshots automatically. Scoped administrator keys and image-count billing were introduced in 0.2.18 and remain available.
+Migration 249 adds three MCP OAuth tables and their indexes. It does not rewrite existing accounts, keys or usage records. Existing migration files, including the response-outcome migration, are unchanged. Keep the additive schema and data volumes on binary rollback; do not run downgrade SQL or restore snapshots automatically. MCP OAuth sessions created after upgrading are unavailable in older binaries, while existing administrator and API-key access remains the rollback path.
 
 The runtime is an immutable non-root container. The existing /app/data mount remains in use. Version checks stay available; direct binary updates and official-binary rollback remain blocked with DEPLOYMENT_MANAGED_UPDATE so they cannot overwrite maintained fixes.
 
