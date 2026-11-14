@@ -2262,6 +2262,11 @@ func classifyOpsErrorLog(c *gin.Context, errType, message, code string, status i
 	localClientAuthError := !effectiveUpstreamError && phase == "auth" && isOpsClientAuthError(code, msg)
 	localBusinessLimited := !effectiveUpstreamError && classifyOpsIsBusinessLimited(errType, phase, code, status, message, localClientAuthError)
 	isBusinessLimited = localModelConfiguration || routingCapacityLimited || (clientBusinessLimited && !effectiveUpstreamError) || localBusinessLimited
+	// 平台没有可用账号属于服务不可用，必须进入 SLA 和错误率告警。
+	// 保留 4xx 用户策略/额度拒绝的原有语义，避免把 503 容量故障当成用户限流漏报。
+	if routingCapacityLimited && status >= http.StatusInternalServerError && !localModelConfiguration {
+		isBusinessLimited = false
+	}
 	errorOwner = classifyOpsErrorOwner(phase, message)
 	errorSource = classifyOpsErrorSource(phase, message)
 	return phase, isBusinessLimited, errorOwner, errorSource
