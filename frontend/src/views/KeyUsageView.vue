@@ -537,6 +537,10 @@ const RING_GRADIENTS = [
 
 const ringAnimated = ref(false)
 const displayPcts = ref<number[]>([])
+let ringFrame: number | undefined
+let ringDelay: number | undefined
+let ringAnimationRun = 0
+let viewUnmounted = false
 
 const ringTrackColor = computed(() => isDark.value ? '#222222' : '#F0F0EE')
 
@@ -555,13 +559,27 @@ function getRingOffset(ring: RingItem): number {
   return CIRCUMFERENCE - (Math.min(ring.pct, 100) / 100) * CIRCUMFERENCE
 }
 
+function cancelRingAnimation() {
+  ringAnimationRun++
+  if (ringFrame !== undefined) cancelAnimationFrame(ringFrame)
+  if (ringDelay !== undefined) window.clearTimeout(ringDelay)
+  ringFrame = undefined
+  ringDelay = undefined
+}
+
 function triggerRingAnimation(items: RingItem[]) {
+  if (viewUnmounted) return
+  cancelRingAnimation()
+  const run = ringAnimationRun
   ringAnimated.value = false
   displayPcts.value = items.map(() => 0)
 
   nextTick(() => {
-    requestAnimationFrame(() => {
-      setTimeout(() => {
+    if (run !== ringAnimationRun) return
+    ringFrame = requestAnimationFrame(() => {
+      ringFrame = undefined
+      ringDelay = window.setTimeout(() => {
+        ringDelay = undefined
         ringAnimated.value = true
 
         // Animate percentage numbers
@@ -570,13 +588,14 @@ function triggerRingAnimation(items: RingItem[]) {
         const targets = items.map(item => item.isBalance ? 0 : item.pct)
 
         function tick() {
+          ringFrame = undefined
           const elapsed = performance.now() - startTime
           const p = Math.min(elapsed / duration, 1)
           const ease = 1 - Math.pow(1 - p, 3)
           displayPcts.value = targets.map(target => Math.round(ease * target))
-          if (p < 1) requestAnimationFrame(tick)
+          if (p < 1) ringFrame = requestAnimationFrame(tick)
         }
-        requestAnimationFrame(tick)
+        ringFrame = requestAnimationFrame(tick)
       }, 50)
     })
   })
@@ -939,6 +958,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  viewUnmounted = true
+  cancelRingAnimation()
   if (resetTimer) clearInterval(resetTimer)
 })
 </script>
