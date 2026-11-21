@@ -320,14 +320,20 @@ func TestBufferedCompat_FailedTerminalKeepsErrorPayload(t *testing.T) {
 			cfg:          cfg,
 		}
 		account := bufferedHostedItemsOAuthAccount()
-		var err error
-		if path == "/v1/chat/completions" {
-			_, err = svc.ForwardAsChatCompletions(context.Background(), c, account, body, "", "")
-		} else {
-			_, err = svc.ForwardAsAnthropic(context.Background(), c, account, body, "", "")
-		}
 		var failoverErr *UpstreamFailoverError
-		require.ErrorAs(t, err, &failoverErr)
+		if path == "/v1/chat/completions" {
+			result, err := svc.ForwardAsChatCompletions(context.Background(), c, account, body, "", "")
+			stopped, ok := AsOpenAIUpstreamFailedWithUsage(err)
+			require.True(t, ok, "confirmed usage must stop another billable attempt: %v", err)
+			require.Equal(t, http.StatusBadGateway, stopped.Failover.StatusCode)
+			require.NotErrorAs(t, err, &failoverErr)
+			require.NotNil(t, result)
+			require.Equal(t, ResponseOutcomeUpstreamFailed, result.ResponseOutcome)
+			require.Equal(t, 10, result.Usage.InputTokens)
+		} else {
+			_, err := svc.ForwardAsAnthropic(context.Background(), c, account, body, "", "")
+			require.ErrorAs(t, err, &failoverErr)
+		}
 		events, _ := c.Get(OpsUpstreamErrorsKey)
 		recorded, _ := events.([]*OpsUpstreamErrorEvent)
 		require.NotEmpty(t, recorded)
