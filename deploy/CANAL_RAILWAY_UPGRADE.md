@@ -1,12 +1,12 @@
 # Maintained Railway deployment
 
-This branch integrates upstream 0.2.24 at 328db26f450edbdf9f8d4344a3ea903ac6396842 (the release tag plus its VERSION update) from production commit ff7bc0fa239516cf7e9ce3eb38594b1a6fcf6793. It retains GPT HTTP cancellation, checked writes and flush errors, response outcomes, observed-consumption accounting, timing/correlation, routing-capacity service alerts, and managed non-root container update protection.
+This branch integrates upstream 0.2.25 at 0f6671457132425d1b84f3d80536b53e02942424 (the release tag plus its VERSION update) from production commit aae6db2894b5446e786f86fee787ee5209028e24. It retains GPT HTTP cancellation, checked writes and flush errors, response outcomes, observed-consumption accounting, timing/correlation, routing-capacity service alerts, and managed non-root container update protection.
 
-The merge combines upstream duration-weighted OpenAI throughput with the delivery filter. Rates and latency statistics include delivered and historical NULL-outcome requests; failed deliveries contribute to consumed output tokens without entering those metrics. Coalesced flushes still check downstream errors and do not retry a billed attempt.
+OpenAI compact terminal events preserve upstream structured client error codes and capacity-code normalization while checking the actual downstream write and flush. A delivery failure reaches the caller as a delivery error, not an upstream failover signal. The previous duration-weighted OpenAI throughput and delivery filtering are unchanged.
 
 The deployed Docker build, go.mod and CI use Go 1.27.4, including the net/http fix for GO-2026-6859. This retains the deployed toolchain alignment and matches current upstream.
 
-This release adds or changes no migration files. Check that the full migration ledger and configuration identities match before and after cutover. The previous release deployed the Ultrafast and nonblocking rollup migrations; the rollback target for 0.2.24 already includes them. Do not run downgrade SQL or restore snapshots automatically.
+This release adds or changes no migration files. Check that the full migration ledger and configuration identities match before and after cutover. The preceding maintained version uses the same schema. Keep existing data volumes during a code rollback; do not run downgrade SQL or restore snapshots automatically.
 
 The runtime is an immutable non-root container. The existing /app/data mount remains in use. Version checks stay available; direct binary updates and official-binary rollback remain blocked with DEPLOYMENT_MANAGED_UPDATE so they cannot overwrite maintained fixes.
 
